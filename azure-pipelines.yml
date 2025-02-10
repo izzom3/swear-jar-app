@@ -1,0 +1,32 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main # Trigger the pipeline on every commit to the 'main' branch.
+
+pool:
+  vmImage: ubuntu-latest # Use a Ubuntu-based agent pool in Azure DevOps.
+
+steps:
+- task: NodeTool@0
+displayName: 'Install Node.js'
+inputs:
+  versionSpec: '18.x' # Change to your Node.js version
+
+- checkout: self # Check out the repository to the agent.
+
+- script: | # Install dependencies for backend and frontend
+  cd backend
+  npm install
+  cd ..
+  cd frontend
+  npm install
+displayName: 'Install Dependencies'
+
+- script: | # Build frontend
+  cd frontend
+  npm run build
+  cd ..
+displayName: 'Build react app'
