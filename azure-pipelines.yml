@@ -12,17 +12,11 @@ steps:
   - script: |
       cd backend
       npm install --legacy-peer-deps
-      cd ../frontend
-      npm install --legacy-peer-deps
-    displayName: 'Install Dependencies'
-
-  # Build backend code and generate artifact
-  - script: |
-      cd backend
-      npm run prepare
       cd ..
       tar -czvf backend.tar.gz backend
-    displayName: 'Build Backend and Create Archive'
+      cd frontend
+      npm install --legacy-peer-deps
+    displayName: 'Install Dependencies'
 
   - script: |
       cd frontend
@@ -40,6 +34,15 @@ steps:
       cd frontend
       npx react-scripts build
     displayName: 'Build React App'
+
+  - task: ArchiveFiles@2
+    displayName: 'Archive Backend Files'
+    inputs:
+      rootFolderOrFile: 'backend'
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/backend.zip'
+      replaceExistingArchive: true
+
 
   - task: ArchiveFiles@2
     displayName: 'Archive Files'
@@ -72,3 +75,4 @@ steps:
       appName: 'swear-jar-app-backend' # make sure the web app matches to backend
       package: '$(Build.ArtifactStagingDirectory)/backend-artifact/**.zip' # this is important
       appType: webApp # make the approprate choice
+      startupCommand: 'npm start'
