@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:4000/api/jars'; // Adjust as needed
+const API_URL = 'https://swear-jar-app-backend-bphvh7ghazendsc4.centralus-01.azurewebsites.net/api/jars'; // Adjust as needed
 
 // Helper function to get the JWT token from local storage
 const getAuthHeader = () => {
