@@ -31,7 +31,7 @@ steps:
   - task: ArchiveFiles@2
     displayName: 'Archive Backend Files'
     inputs:
-      rootFolderOrFile: 'backend'
+      rootFolderOrFile: 'backend/'
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/backend.zip'
       replaceExistingArchive: true
@@ -40,7 +40,7 @@ steps:
   - task: ArchiveFiles@2
     displayName: 'Archive Frontend Files'
     inputs:
-      rootFolderOrFile: 'frontend\build'
+      rootFolderOrFile: 'frontend/build/*'
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
       replaceExistingArchive: true
