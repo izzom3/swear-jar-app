@@ -19,10 +19,10 @@ steps:
 
   - script: |
       cd frontend
-      echo "Current directory: $(pwd)"
-      ls -l
-      echo "Contents of node_modules/.bin:"
-      ls -l node_modules/.bin  # List executables
+      echo "Current directory: %cd%"  # Updated: Windows command for current directory
+      dir  # Updated: Windows command to list files
+      echo "Contents of node_modules\.bin:"  # Added escaped backslash
+      dir node_modules\.bin  # Updated: Windows command to list files in directory
       echo "Running Build"
       npm run build
     displayName: 'Build React App'
