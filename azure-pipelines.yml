@@ -16,6 +16,14 @@ steps:
       npm install --legacy-peer-deps
     displayName: 'Install Dependencies'
 
+  # Build backend code and generate artifact
+  - script: |
+      cd backend
+      npm run build
+      cd ..
+      tar -czvf backend.tar.gz backend
+    displayName: 'Build Backend and Create Archive'
+
   - script: |
       cd frontend
       where.exe react-scripts || npm install react-scripts --save-dev
@@ -51,7 +59,16 @@ steps:
   - task: AzureWebApp@1
     displayName: 'Deploy to Azure Web App'
     inputs:
-      azureSubscription: 'MyAzureSubscription'
+      azureSubscription: 'Azure subscription 1'
       appName: 'swear-jar-app'
       package: '$(Build.ArtifactStagingDirectory)\**\*.zip'
       appType: 'webApp'
+
+# Deploy Back end
+  - task: AzureWebApp@1
+    displayName: 'Deploy Backend API Azure App Services'
+    inputs: # must match the above and be precise
+      azureSubscription: 'Azure subscription 1'
+      appName: 'swear-jar-app-backend' # make sure the web app matches to backend
+      package: '$(Build.ArtifactStagingDirectory)/backend-artifact/**.zip' # this is important
+      appType: webApp # make the approprate choice
