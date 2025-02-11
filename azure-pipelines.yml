@@ -11,10 +11,10 @@ steps:
 
   - script: |
       cd backend
-      npm install
+      npm ci
       cd ..
       cd frontend
-      npm install
+      npm ci
     displayName: 'Install Dependencies'
 
   - script: |
