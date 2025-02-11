@@ -25,13 +25,6 @@ steps:
 
   - script: |
       cd frontend
-      echo "Current directory: %CD%"
-      dir
-      dir node_modules\.bin
-    displayName: 'Debug Node Modules'
-
-  - script: |
-      cd frontend
       npx react-scripts build
     displayName: 'Build React App'
 
@@ -45,7 +38,7 @@ steps:
 
 
   - task: ArchiveFiles@2
-    displayName: 'Archive Files'
+    displayName: 'Archive Frontend Files'
     inputs:
       rootFolderOrFile: 'frontend\build'
       archiveType: 'zip'
@@ -53,14 +46,19 @@ steps:
       replaceExistingArchive: true
 
   - task: PublishBuildArtifacts@1
-    displayName: 'Publish Artifacts'
+    displayName: 'Publish Frontend Artifacts'
     inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'drop'
-      publishLocation: 'container'
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend.zip' # match file
+      artifactName: 'frontend'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Backend Artifacts'
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/backend.zip' # match file
+      artifactName: 'backend'
 
   - task: AzureWebApp@1
-    displayName: 'Deploy to Azure Web App'
+    displayName: 'Deploy Frontend to Azure Web App'
     inputs:
       azureSubscription: 'MyAzureSubscription'
       appName: 'swear-jar-app'
