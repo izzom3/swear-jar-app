@@ -6,6 +6,7 @@ import SwearJarList from './components/SwearJarList.tsx';
 import CreateSwearJar from './components/CreateSwearJar.tsx';
 import SwearJarDetails from './components/SwearJarDetails.tsx';
 import './App.css';
+import Logout from './components/Logout.tsx';
 
 function App() {
     // State to manage user authentication
@@ -59,6 +60,9 @@ function App() {
                                 <li>
                                     <Link to="/create-jar">Create Swear Jar</Link>
                                 </li>
+                                <li>
+                                    <Link to="/logout">Logout</Link>
+                                </li>
                             </>
                         )}
                     </ul>
@@ -67,10 +71,17 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<Login setAuth={setAuth} />} />
                     <Route path="/register" element={<Register setAuth={setAuth} />} />
+                    <Route path="/logout" element={<Logout setAuth={setAuth} />} />
                     <Route path="/jars" element={<SwearJarList />} />
                     <Route path="/create-jar" element={<CreateSwearJar />} />
                     <Route path="/jars/:id" element={<SwearJarDetails />} />
-                    <Route path="/" element={<div>Home</div>} />
+                    <Route path="/" element={
+                            isAuthenticated ? (
+                                <div>Welcome! View all Swear Jars <Link to="/jars">here</Link>.</div>
+                            ) : (
+                                <div>Please Login or Register to see existing Swear Jars</div>
+                            )
+                        }/>
                 </Routes>
             </div>
         </Router>
