@@ -9,10 +9,10 @@ pool:
     - agent.name -equals DESKTOP-F638SF0 # Replace with the name of your Agent
 
 steps:
-  - task: NodeTool@0
-    displayName: 'Install Node.js'
-    inputs:
-      versionSpec: '18.x'
+  # - task: NodeTool@0
+  #   displayName: 'Install Node.js'
+  #   inputs:
+  #     versionSpec: '18.x'
 
   - checkout: self
 
