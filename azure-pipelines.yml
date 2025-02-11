@@ -49,7 +49,7 @@ steps:
     inputs:
       rootFolderOrFile: 'frontend\build'
       archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)\$(Build.BuildId).zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
       replaceExistingArchive: true
 
   - task: PublishBuildArtifacts@1
@@ -64,7 +64,7 @@ steps:
     inputs:
       azureSubscription: 'MyAzureSubscription'
       appName: 'swear-jar-app'
-      package: '$(Build.ArtifactStagingDirectory)\**\*.zip'
+      package: '$(Build.ArtifactStagingDirectory)/frontend.zip'
       appType: 'webApp'
 
 # Deploy Back end
@@ -73,6 +73,6 @@ steps:
     inputs: # must match the above and be precise
       azureSubscription: 'MyAzureSubscription'
       appName: 'swear-jar-app-backend' # make sure the web app matches to backend
-      package: '$(Build.ArtifactStagingDirectory)/backend-artifact/**.zip' # this is important
+      package: '$(Build.ArtifactStagingDirectory)/backend.zip' # this is important
       appType: webApp # make the approprate choice
       startupCommand: 'npm start'
