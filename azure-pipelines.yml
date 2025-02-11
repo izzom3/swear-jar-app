@@ -1,19 +1,12 @@
 trigger:
   - main
 
-#pool:
-#  vmImage: ubuntu-latest
 pool:
   name: Self Hosted  # Use the name of your agent pool
   demands:
     - agent.name -equals DESKTOP-F638SF0 # Replace with the name of your Agent
 
 steps:
-  # - task: NodeTool@0
-  #   displayName: 'Install Node.js'
-  #   inputs:
-  #     versionSpec: '18.x'
-
   - checkout: self
 
   - script: |
@@ -26,8 +19,12 @@ steps:
 
   - script: |
       cd frontend
+      echo "Current directory: $(pwd)"
+      ls -l
+      echo "Contents of node_modules/.bin:"
+      ls -l node_modules/.bin  # List executables
+      echo "Running Build"
       npm run build
-      cd ..
     displayName: 'Build React App'
 
   - task: ArchiveFiles@2
