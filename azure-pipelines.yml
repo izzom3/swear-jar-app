@@ -11,10 +11,10 @@ steps:
 
   - script: |
       cd backend
-      npm ci
+      npm install --force
       cd ..
       cd frontend
-      npm ci
+      npm install --force
     displayName: 'Install Dependencies'
 
   - script: |
@@ -30,7 +30,7 @@ steps:
   - task: ArchiveFiles@2
     displayName: 'Archive Files'
     inputs:
-      rootFolderOrFile: 'frontend/build'
+      rootFolderOrFile: 'frontend/bio/build'
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       replaceExistingArchive: true
