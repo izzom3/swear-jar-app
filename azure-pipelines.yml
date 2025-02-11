@@ -19,7 +19,7 @@ steps:
   # Build backend code and generate artifact
   - script: |
       cd backend
-      npm run build
+      npm run dev
       cd ..
       tar -czvf backend.tar.gz backend
     displayName: 'Build Backend and Create Archive'
