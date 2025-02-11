@@ -2,31 +2,43 @@ trigger:
   - main
 
 pool:
-  name: Self Hosted  # Your agent pool
+  name: Self Hosted
   demands:
-    - agent.name -equals DESKTOP-F638SF0  # Your machine's agent name
+    - agent.name -equals DESKTOP-F638SF0
 
 steps:
   - checkout: self
 
   - script: |
       cd backend
-      npm ci
+      npm install --legacy-peer-deps
       cd ../frontend
-      npm ci
+      npm install --legacy-peer-deps
     displayName: 'Install Dependencies'
 
   - script: |
-      npm run build
+      cd frontend
+      where.exe react-scripts || npm install react-scripts --save-dev
+    displayName: 'Ensure react-scripts is installed'
+
+  - script: |
+      cd frontend
+      echo "Current directory: %CD%"
+      dir
+      dir node_modules\.bin
+    displayName: 'Debug Node Modules'
+
+  - script: |
+      cd frontend
+      npx react-scripts build
     displayName: 'Build React App'
-    workingDirectory: frontend  # Ensure correct directory
 
   - task: ArchiveFiles@2
     displayName: 'Archive Files'
     inputs:
-      rootFolderOrFile: 'frontend/build'  # Ensure correct build folder
+      rootFolderOrFile: 'frontend\build'
       archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)\$(Build.BuildId).zip'
       replaceExistingArchive: true
 
   - task: PublishBuildArtifacts@1
@@ -41,5 +53,5 @@ steps:
     inputs:
       azureSubscription: 'MyAzureSubscription'
       appName: 'swear-jar-app'
-      package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
+      package: '$(Build.ArtifactStagingDirectory)\**\*.zip'
       appType: 'webApp'
