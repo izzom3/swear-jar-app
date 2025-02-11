@@ -2,35 +2,29 @@ trigger:
   - main
 
 pool:
-  name: Self Hosted  # Use the name of your agent pool
+  name: Self Hosted  # Your agent pool
   demands:
-    - agent.name -equals DESKTOP-F638SF0 # Replace with the name of your Agent
+    - agent.name -equals DESKTOP-F638SF0  # Your machine's agent name
 
 steps:
   - checkout: self
 
   - script: |
       cd backend
-      npm install --force
-      cd ..
-      cd frontend
-      npm install --force
+      npm ci
+      cd ../frontend
+      npm ci
     displayName: 'Install Dependencies'
 
   - script: |
-      cd frontend
-      echo "Current directory: %cd%"  # Updated: Windows command for current directory
-      dir  # Updated: Windows command to list files
-      echo "Contents of node_modules\.bin:"  # Added escaped backslash
-      dir node_modules\.bin  # Updated: Windows command to list files in directory
-      echo "Running Build"
       npm run build
     displayName: 'Build React App'
+    workingDirectory: frontend  # Ensure correct directory
 
   - task: ArchiveFiles@2
     displayName: 'Archive Files'
     inputs:
-      rootFolderOrFile: 'frontend/bio/build'
+      rootFolderOrFile: 'frontend/build'  # Ensure correct build folder
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       replaceExistingArchive: true
