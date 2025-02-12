@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://swear-jar-app-backend-bphvh7ghazendsc4.centralus-01.azurewebsites.net/api/auth'; // Adjust as needed
+const API_URL = process.env.REACT_APP_FRONTEND_API_URL + '/auth';
 
 const register = async (userData: any) => {
     const response = await axios.post(`${API_URL}/register`, userData);

@@ -7,12 +7,15 @@
     "postcss": "8.4.31"
   },
   "dependencies": {
+    "@types/react": "^19.0.8",
     "axios": "^1.7.9",
     "cra-template-typescript": "1.2.0",
+    "dotenv": "^16.4.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^6.29.0",
     "react-scripts": "^5.0.1",
+    "socket.io-client": "^4.8.1",
     "testing-library": "^0.0.2"
   },
   "scripts": {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://swear-jar-app-backend-bphvh7ghazendsc4.centralus-01.azurewebsites.net/api/jars'; // Adjust as needed
+const BACKEND_API_URL = process.env.REACT_APP_FRONTEND_API_URL + '/jars';
 
 // Helper function to get the JWT token from local storage
 const getAuthHeader = () => {
@@ -9,28 +9,38 @@ const getAuthHeader = () => {
 };
 
 const createJar = async (jarData: any) => {
-    const response = await axios.post(`${API_URL}/create`, jarData, { headers: getAuthHeader() });
+    const response = await axios.post(`${BACKEND_API_URL}/create`, jarData, { headers: getAuthHeader() });
     return response.data;
 };
 
 const getJars = async () => {
-    const response = await axios.get(API_URL);
+    const response = await axios.get(`${BACKEND_API_URL}`);
     return response.data;
 };
 
 const getJar = async (id: string) => {
-    const response = await axios.get(`${API_URL}/${id}`);
+    const response = await axios.get(`${BACKEND_API_URL}/${id}`);
     return response.data;
 };
 
 const addMember = async (id: string, data: any) => {
-    const response = await axios.put(`${API_URL}/${id}/addMember`, data);
+    const response = await axios.put(`${BACKEND_API_URL}/${id}/addMember`, data);
     return response.data;
 };
 
 const removeMember = async (id: string, data: any) => {
-    const response = await axios.delete(`${API_URL}/${id}/removeMember`, { data });
+    const response = await axios.delete(`${BACKEND_API_URL}/${id}/removeMember`, { data });
     return response.data;
+};
+
+const getTransactions = async (id: string) => {
+    try {
+        const response = await axios.get(`${BACKEND_API_URL}/${id}/transactions`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
+        throw error;
+    }
 };
 
 const jarService = {
@@ -39,6 +49,7 @@ const jarService = {
     getJar,
     addMember,
     removeMember,
+    getTransactions
 };
 
 export default jarService;

@@ -26,6 +26,7 @@ router.post('/register', async (req, res) => {
 
 // Login an existing user
 router.post('/login', async (req, res) => {
+    console.log('Login route hit');
     try {
         const { username, password } = req.body;
         const user = await User.findOne({ username });

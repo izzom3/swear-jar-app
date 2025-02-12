@@ -18,12 +18,12 @@ const Login: React.FC<Props> = ({ setAuth }) => {
           const response = await authService.login({ username, password });
           if (response.token) {
               localStorage.setItem("token", response.token);
-              setAuth(true);  // Update authentication state in App.tsx
+              localStorage.setItem("username", username);
+              setAuth(true); 
               setMessage('Login successful. Redirecting...');
               setTimeout(() => {
-
                   navigate("/jars");
-              }, 1500); // Redirect after 1.5 second
+              }, 1000);
           } else {
               console.log("Login failed");
               setMessage('Login failed.  Please check your credentials.');

@@ -17,10 +17,11 @@ const Register: React.FC<Props> = ({setAuth}) => {
         try {
             const response = await authService.register({ username, password });
             if (response.message === "User registered successfully") {
+                localStorage.setItem("username", username);
                 setMessage('User registered successfully. Redirecting to Login...');
                 setTimeout(() => {
                     navigate("/login");
-                }, 1500); // Redirect after 1.5 second
+                }, 1000); // Redirect after 1.5 second
             } else {
                 setMessage(response.message || 'Registration failed. Please try again.');
             }
