@@ -5,6 +5,13 @@ const auth = require('../middleware/auth'); // Import the auth middleware
 const Transaction = require('../models/Transactions'); 
 const mongoose = require('mongoose');
 
+
+const transactionUpdates = {};
+
+function generateTransactionId() {
+  return new mongoose.Types.ObjectId().toHexString();
+}
+
 // Create a new swear jar (protected route)
 router.post('/create', auth, async (req, res) => {
     try {
@@ -97,7 +104,10 @@ router.put('/:id/addMember', async (req, res) => {
         }
 
         const updatedSwearJar = await swearJar.save({session});
-        const transaction = new Transaction({ // create a new log entry
+        const transactionId = generateTransactionId();
+        //Add a new transaction
+        const transaction = new Transaction({
+            _id: transactionId,
             swearJarId: swearJar._id,
             userId: username,
             action: transactionType,
@@ -105,7 +115,13 @@ router.put('/:id/addMember', async (req, res) => {
         });
 
         await transaction.save({session});
-        io.emit('newTransaction', transaction);
+        io.emit('newTransaction', {
+            _id: transactionId.toString(),
+            swearJarId: swearJar._id.toString(),
+            userId: username,
+            action: transactionType,
+            details: { name: name, amount: amount }
+          });
 
         await session.commitTransaction();
         session.endSession();
@@ -155,7 +171,9 @@ router.delete('/:id/removeMember', async (req, res) => {
         }
 
         const updatedSwearJar = await swearJar.save({session});
+        const transactionId = generateTransactionId();
         const transaction = new Transaction({ // create a new log entry
+            _id: transactionId,
             swearJarId: swearJar._id,
             userId: username,
             action: transactionType,
@@ -163,7 +181,13 @@ router.delete('/:id/removeMember', async (req, res) => {
         });
 
         await transaction.save({session});
-        io.emit('newTransaction', transaction);
+        io.emit('newTransaction', {
+            _id: transactionId.toString(),  // MUST change to a string
+            swearJarId: swearJar._id.toString(),
+            userId: username,
+            action: transactionType,
+            details: { name: name, amount: amount }
+          });
 
         await session.commitTransaction();
         session.endSession();

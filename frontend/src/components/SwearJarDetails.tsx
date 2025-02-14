@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import jarService from '../services/jarService.ts';
 import { io } from 'socket.io-client';
@@ -9,6 +9,7 @@ interface Member {
 }
 
 interface Transaction {
+    _id: string;
     swearJarId: string;
     userId: string;
     action: string;
@@ -21,9 +22,9 @@ const SwearJarDetails: React.FC = () => {
     const [password, setPassword] = useState('');
     const [memberName, setMemberName] = useState('');
     const [amount, setAmount] = useState('');
-    const [username, setUsername] = useState<string | null>(null); 
+    const [username, setUsername] = useState<string | null>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [socket, setSocket] = useState<any>(null);
+    const socket = useRef(io(process.env.REACT_APP_BACKEND_URL)).current;
 
     useEffect(() => {
         const fetchJar = async () => {
@@ -32,46 +33,68 @@ const SwearJarDetails: React.FC = () => {
                 setJar(data);
             }
         };
+        fetchJar();
+    }, [id, jarService]);
+
+    useEffect(() => {
         const fetchTransactions = async () => {
             try {
                 if (id) {
                     const transactionData = await jarService.getTransactions(id);
                     setTransactions(transactionData);
-                    localStorage.setItem("transctions", JSON.stringify(transactions))
                 }
             } catch (error) {
                 console.error("Error fetching transactions", error);
             }
         };
+        fetchTransactions();
+    }, [id, jarService]);
+
+    useEffect(() => {
         const storedUsername = localStorage.getItem('username');
         if (storedUsername) {
             setUsername(storedUsername);
         }
-        fetchJar();
-        fetchTransactions();
-    }, [id, transactions]);
+    }, []);
 
     useEffect(() => {
-        const newSocket = io(process.env.REACT_APP_BACKEND_URL);
-        setSocket(newSocket)
-      
         return () => {
-          newSocket.disconnect()
-        }
-      }, [])
-      
+          socket.disconnect();
+        };
+      }, [socket]);
+
         useEffect(() => {
-          if (!socket) return
-      
-          socket.on("newTransaction", message => {
-            setTransactions(prevTransactions => [...prevTransactions, message]);
-          })
-      
+          if (!socket) return;
+
+          socket.on("newTransaction", (message: Transaction) => {
+            setTransactions((prevTransactions) => {
+                const newTransactions = [...prevTransactions, message]
+                  .filter((value, index, self) =>
+                    index === self.findIndex((t) => (
+                      t._id === value._id
+                    ))
+                  );
+                return newTransactions;
+              });
+          });
+
           return () => {
-            socket.off("newTransaction")
-          }
-        }, [socket])
-      
+            socket.off("newTransaction");
+          };
+        }, [socket]);
+
+        const transactionList = useMemo(() => {
+            return (
+              <ul>
+                {transactions.map((transaction) => (
+                  <li key={transaction._id}>
+                    {transaction.userId} has done: {transaction.action} - {transaction.details.name}{" "} with amount:
+                    {transaction.details.amount}
+                  </li>
+                ))}
+              </ul>
+            );
+          }, [transactions]);
 
     const handleAddMoney = async () => {
         if (!id || !password || !memberName || !amount || !username) return;
@@ -110,14 +133,7 @@ const SwearJarDetails: React.FC = () => {
             </ul>
             <div>
                 <h3>Transactions</h3>
-                <ul>
-                    {transactions.map((transaction) => (
-                    <li key={transaction.swearJarId}>
-                        {transaction.userId} has done: {transaction.action} - {transaction.details.name}{" "} with amount:
-                        {transaction.details.amount}
-                        </li>
-                    ))}
-                </ul>
+                {transactionList}
             </div>
             <div>
                 <h3>Add/Remove Money</h3>

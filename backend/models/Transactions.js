@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const TransactionsSchema = new Schema({
+  _id:{
+    type: Schema.Types.ObjectId
+  },
   swearJarId: {
     type: Schema.Types.ObjectId,
     ref: 'SwearJar',
@@ -9,7 +12,7 @@ const TransactionsSchema = new Schema({
   },
   timestamp: {
     type: Date,
-    default: Date.now  // Automatically set the current timestamp
+    default: Date.now
   },
   userId: {
     type: String,
