@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import jarService from '../services/jarService.ts';
 import { io } from 'socket.io-client';
@@ -26,29 +26,37 @@ const SwearJarDetails: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const socket = useRef(io(process.env.REACT_APP_BACKEND_URL)).current;
 
-    useEffect(() => {
-        const fetchJar = async () => {
+    const fetchJar = useCallback(async () => {
+        try {
             if (id) {
+                console.log("Fetching jar data...");
                 const data = await jarService.getJar(id);
+                console.log("Jar data fetched:", data);
                 setJar(data);
             }
-        };
-        fetchJar();
-    }, [id, jarService]);
+        } catch (error) {
+            console.error("Error fetching jar", error);
+        }
+    }, [id]);
 
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            try {
-                if (id) {
-                    const transactionData = await jarService.getTransactions(id);
-                    setTransactions(transactionData);
-                }
+    const fetchTransactions = useCallback(async () => {
+        try {
+            if (id) {
+                console.log("Fetching transactions data...");
+                const transactionData = await jarService.getTransactions(id);
+                setTransactions(transactionData);
+                console.log("Transactions data fetched:", transactionData);
+            }
             } catch (error) {
                 console.error("Error fetching transactions", error);
             }
-        };
+    }, [id]);
+
+    useEffect(() => {
+        console.log("Component mounted or fetchJar/fetchTransactions updated");
+        fetchJar();
         fetchTransactions();
-    }, [id, jarService]);
+    }, [fetchJar, fetchTransactions]);
 
     useEffect(() => {
         const storedUsername = localStorage.getItem('username');
@@ -57,16 +65,23 @@ const SwearJarDetails: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        return () => {
-          socket.disconnect();
-        };
-      }, [socket]);
+    // useEffect(() => {
+    //     return () => {
+    //       console.log("Component unmounted, disconnecting socket");
+    //       socket.disconnect();
+    //     };
+    //   }, [socket]);
 
         useEffect(() => {
           if (!socket) return;
+          console.log("Setting up socket event listeners...");
+
+          socket.on("connect", () => {
+            console.log("Socket connected with ID:", socket.id);
+        });
 
           socket.on("newTransaction", (message: Transaction) => {
+            console.log("Received newTransaction event:", message);
             setTransactions((prevTransactions) => {
                 const newTransactions = [...prevTransactions, message]
                   .filter((value, index, self) =>
@@ -76,12 +91,21 @@ const SwearJarDetails: React.FC = () => {
                   );
                 return newTransactions;
               });
+              fetchTransactions();
+              fetchJar();
+          });
+
+          socket.on("disconnect", () => {
+            console.log("Socket disconnected");
           });
 
           return () => {
+            console.log("Cleaning up socket event listeners");
+            socket.off("connect");
             socket.off("newTransaction");
+            socket.off("disconnect");
           };
-        }, [socket]);
+        }, [socket, fetchTransactions, fetchJar, id]);
 
         const transactionList = useMemo(() => {
             return (
@@ -100,8 +124,8 @@ const SwearJarDetails: React.FC = () => {
         if (!id || !password || !memberName || !amount || !username) return;
 
         await jarService.addMember(id, { password, name: memberName, amount, username });
-        const updatedJar = await jarService.getJar(id);
-        setJar(updatedJar);
+        fetchTransactions();
+        fetchJar();
         setAmount('');
     };
 
@@ -109,8 +133,8 @@ const SwearJarDetails: React.FC = () => {
         if (!id || !password || !memberName || !amount || !username) return;
 
         await jarService.removeMember(id, { password, name: memberName, amount, username });
-        const updatedJar = await jarService.getJar(id);
-        setJar(updatedJar);
+        fetchTransactions();
+        fetchJar();
         setAmount('');
     };
 
