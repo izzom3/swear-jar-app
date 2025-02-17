@@ -4,18 +4,17 @@ import jarService from '../services/jarService.ts';
 
 const CreateSwearJar: React.FC = () => {
     const [name, setName] = useState('');
-    const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await jarService.createJar({ name, password }); // API requires JSON
+            const response = await jarService.createJar({name});
             setMessage('Swear jar created successfully!');
             setTimeout(() => {
                 navigate("/jars");
-            }, 1500); // Redirect after 1.5 second
+            }, 1000);
         } catch (error: any) {
             console.error('Create swear jar error:', error);
             setMessage(error.response?.data?.message || 'Failed to create swear jar.');
@@ -34,16 +33,6 @@ const CreateSwearJar: React.FC = () => {
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
                         required
                     />
                 </div>

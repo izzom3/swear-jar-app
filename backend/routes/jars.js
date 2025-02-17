@@ -3,6 +3,7 @@ const router = express.Router();
 const SwearJar = require('../models/SwearJar');
 const auth = require('../middleware/auth'); // Import the auth middleware
 const Transaction = require('../models/Transactions'); 
+const User = require('../models/User');
 const mongoose = require('mongoose');
 
 
@@ -15,11 +16,14 @@ function generateTransactionId() {
 // Create a new swear jar (protected route)
 router.post('/create', auth, async (req, res) => {
     try {
-        const { name, password } = req.body;
+        const { name } = req.body;
         const newSwearJar = new SwearJar({
             name,
-            password,
-            owner: req.userId // Set the owner to the logged-in user
+            owner: req.userId,
+            permissions: [{
+                userId: req.userId,
+                canEdit: true
+            }]
         });
         await newSwearJar.save();
         res.status(201).json(newSwearJar);
@@ -37,6 +41,18 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Failed to retrieve swear jars' });
+    }
+});
+
+router.get('/getAllUsers', auth, async (req, res) => {
+    try {
+        const users = await User.find({}, '_id username'); // Only return _id and username
+
+        res.json(users); //Return the users
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to retrieve users' });
     }
 });
 
@@ -66,13 +82,14 @@ router.get('/:swearJarId/transactions', async (req, res) => {
     }
 });
 
-// Update a swear jar's members (password protected - MUST match)
-router.put('/:id/addMember', async (req, res) => {
+// Add to a swear jar's members
+router.put('/:id/addMember', auth, async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     const io = require('../server').io;
+
     try {
-        const { password, name, amount, username } = req.body;
+        const { name, amount, username } = req.body;
         const swearJar = await SwearJar.findById(req.params.id).session(session);
 
         if (!swearJar) {
@@ -81,10 +98,15 @@ router.put('/:id/addMember', async (req, res) => {
             return res.status(404).json({ message: 'Swear jar not found' });
         }
 
-        if (swearJar.password !== password) {
+        // Check if the user has edit permission
+        const hasPermission = swearJar.permissions.some(permission =>
+            permission.userId.toString() === req.userId && permission.canEdit === true
+        );
+
+        if (!hasPermission && swearJar.owner.toString() !== req.userId) { //also add owner
             await session.abortTransaction();
             session.endSession();
-            return res.status(401).json({ message: 'Incorrect password' });
+            return res.status(403).json({ message: 'Unauthorized: You do not have permission to edit this jar' });
         }
 
         let transactionType = '';
@@ -103,7 +125,7 @@ router.put('/:id/addMember', async (req, res) => {
             transactionType = 'name added';
         }
 
-        const updatedSwearJar = await swearJar.save({session});
+        const updatedSwearJar = await swearJar.save({ session });
         const transactionId = generateTransactionId();
         //Add a new transaction
         const transaction = new Transaction({
@@ -114,14 +136,14 @@ router.put('/:id/addMember', async (req, res) => {
             details: { name: name, amount: amount }
         });
 
-        await transaction.save({session});
+        await transaction.save({ session });
         io.emit('newTransaction', {
             _id: transactionId.toString(),
             swearJarId: swearJar._id.toString(),
             userId: username,
             action: transactionType,
             details: { name: name, amount: amount }
-          });
+        });
 
         await session.commitTransaction();
         session.endSession();
@@ -135,14 +157,14 @@ router.put('/:id/addMember', async (req, res) => {
     }
 });
 
-// Add a swear jar's members (password protected - MUST match)
-router.delete('/:id/removeMember', async (req, res) => {
+// Remove from a swear jar's member
+router.delete('/:id/removeMember', auth, async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     const io = require('../server').io;
 
     try {
-        const { password, name, amount, username } = req.body;
+        const { name, amount, username } = req.body;   // Removed password
         const swearJar = await SwearJar.findById(req.params.id).session(session);
 
         if (!swearJar) {
@@ -151,26 +173,33 @@ router.delete('/:id/removeMember', async (req, res) => {
             return res.status(404).json({ message: 'Swear jar not found' });
         }
 
-        if (swearJar.password !== password) {
+        // Check if the user has edit permission
+        const hasPermission = swearJar.permissions.some(permission =>
+            permission.userId.toString() === req.userId && permission.canEdit === true
+        );
+
+        if (!hasPermission && swearJar.owner.toString() !== req.userId) {  //also add owner
             await session.abortTransaction();
             session.endSession();
-            return res.status(401).json({ message: 'Incorrect password' });
+            return res.status(403).json({ message: 'Unauthorized: You do not have permission to edit this jar' });
         }
 
         // Check if member exists
         const memberExists = swearJar.members.some(member => member.name === name);
 
         if (!memberExists) {
+            await session.abortTransaction();
+            session.endSession();
             return res.status(404).json({ message: 'Member not found' });
-        } else {
-            // Update existing member amount
-            swearJar.members = swearJar.members.map(member =>
-                member.name === name ? { ...member, amount: member.amount - Number(amount) } : member
-            );
-            transactionType = 'amount removed';
         }
 
-        const updatedSwearJar = await swearJar.save({session});
+        // Update existing member amount
+        swearJar.members = swearJar.members.map(member =>
+            member.name === name ? { ...member, amount: member.amount - Number(amount) } : member
+        );
+        transactionType = 'amount removed';
+
+        const updatedSwearJar = await swearJar.save({ session });
         const transactionId = generateTransactionId();
         const transaction = new Transaction({ // create a new log entry
             _id: transactionId,
@@ -180,22 +209,91 @@ router.delete('/:id/removeMember', async (req, res) => {
             details: { name: name, amount: amount }
         });
 
-        await transaction.save({session});
+        await transaction.save({ session });
         io.emit('newTransaction', {
             _id: transactionId.toString(),  // MUST change to a string
             swearJarId: swearJar._id.toString(),
             userId: username,
             action: transactionType,
             details: { name: name, amount: amount }
-          });
+        });
 
         await session.commitTransaction();
         session.endSession();
-        
+
         res.json(updatedSwearJar);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Failed to update swear jar' });
+    }
+});
+
+// Add permission to a user (protected route)
+router.post('/addPermission', auth, async (req, res) => {
+    try {
+        const { jarId, userIdToAdd } = req.body;
+
+        if (!jarId || !userIdToAdd) {
+            return res.status(400).json({ message: 'jarId and userIdToAdd are required' });
+        }
+
+        const jar = await SwearJar.findById(jarId);
+
+        if (!jar) {
+            return res.status(404).json({ message: 'Swear jar not found' });
+        }
+
+        if (jar.owner.toString() !== req.userId) {
+            return res.status(403).json({ message: 'Unauthorized: You are not the owner of this jar' });
+        }
+
+        const userAlreadyHasPermission = jar.permissions.some(permission =>
+            permission.userId.toString() === userIdToAdd
+        );
+
+        if (userAlreadyHasPermission) {
+             return res.status(400).json({ message: 'User already has permissions' });
+        }
+
+        // Add the new permission
+        jar.permissions.push({ userId: userIdToAdd, canEdit: true });
+        await jar.save();
+        res.json(jar);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to add permission' });
+    }
+});
+
+router.post('/removePermission', auth, async (req, res) => {
+    try {
+        const { jarId, userIdToRemove } = req.body;
+
+        if (!jarId || !userIdToRemove) {
+            return res.status(400).json({ message: 'jarId and userIdToRemove are required' });
+        }
+
+        const jar = await SwearJar.findById(jarId);
+
+        if (!jar) {
+            return res.status(404).json({ message: 'Swear jar not found' });
+        }
+        
+        if (jar.owner.toString() !== req.userId) {
+            return res.status(403).json({ message: 'Unauthorized: You are not the owner of this jar' });
+        }
+
+        jar.permissions = jar.permissions.filter(permission =>
+            permission.userId.toString() !== userIdToRemove
+        );
+
+        await jar.save();
+        res.json(jar);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to remove permission' });
     }
 });
 

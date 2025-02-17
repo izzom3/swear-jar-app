@@ -40,13 +40,39 @@ const getTransactions = async (id: string) => {
     }
 };
 
+//Add permission to a user
+const addPermission = async (jarId: string, userIdToAdd: string) => {
+    const response = await axiosInstance.post(`${BACKEND_API_URL}/addPermission`, { jarId, userIdToAdd });
+    return response.data;
+};
+
+//Remove permission from a user
+const removePermission = async (jarId: string, userIdToRemove: string) => {
+    const response = await axiosInstance.post(`${BACKEND_API_URL}/removePermission`, { jarId, userIdToRemove });
+    return response.data;
+};
+
+const getAllUsers = async () => {
+    try {
+        console.log("Calling getAllUsers...");
+        const response = await axiosInstance.get(`${BACKEND_API_URL}/getAllUsers`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+    }
+};
+
 const jarService = {
     createJar,
     getJars,
     getJar,
     addMember,
     removeMember,
-    getTransactions
+    getTransactions,
+    addPermission,
+    removePermission,
+    getAllUsers,
 };
 
 export default jarService;
